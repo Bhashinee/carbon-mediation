@@ -82,12 +82,6 @@
         </profile>
     </profiles>
 
-    <scm>
-        <connection>scm:git:https://github.com/wso2/carbon-mediation.git</connection>
-        <url>https://github.com/wso2/carbon-mediation.git</url>
-        <developerConnection>scm:git:https://github.com/wso2/carbon-mediation.git</developerConnection>
-        <tag>carbon-mediation-4.4.10</tag>
-    </scm>
 
     <build>
 
@@ -100,18 +94,6 @@
         </extensions>
 
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <preparationGoals>clean install</preparationGoals>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.jvnet.maven.incrementalbuild</groupId>
                 <artifactId>incremental-build-plugin</artifactId>
@@ -2387,7 +2369,6 @@
         <javax.xml.soap.imp.pkg.version>[1.0.0, 1.1.0)</javax.xml.soap.imp.pkg.version>
         <!--<org.apache.commons.logging.version>[1.1.0, 1.2.0)</org.apache.commons.logging.version>-->
         <org.apache.commons.logging.version>1.1.1</org.apache.commons.logging.version>
-        <project.scm.id>wso2-scm-server</project.scm.id>
 
         <!-- Cache mediator dependency versions -->
         <axis2-saaj.version>1.6.1-wso2v11</axis2-saaj.version>
