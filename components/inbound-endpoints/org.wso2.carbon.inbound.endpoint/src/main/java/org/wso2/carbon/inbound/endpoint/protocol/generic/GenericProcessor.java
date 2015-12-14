@@ -17,10 +17,6 @@
  */
 package org.wso2.carbon.inbound.endpoint.protocol.generic;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Properties;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -31,6 +27,10 @@ import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundRequestProcessorImpl;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Properties;
 
 public class GenericProcessor extends InboundRequestProcessorImpl implements TaskStartupObserver {
 
@@ -126,4 +126,13 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 		start();
 	}
 
+    /**
+     * Stop the inbound polling processor This will be called when inbound is
+     * undeployed/redeployed or when server stop
+     */
+    public void destroy() {
+        super.destroy();
+        //Terminate polling events
+        pollingConsumer.destroy();
+    }
 }
