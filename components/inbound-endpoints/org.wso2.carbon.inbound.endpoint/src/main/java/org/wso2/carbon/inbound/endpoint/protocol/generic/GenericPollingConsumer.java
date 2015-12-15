@@ -22,25 +22,16 @@ import org.apache.axis2.builder.Builder;
 import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.builder.SOAPBuilder;
 import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.format.DataSourceMessageBuilder;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.wso2.carbon.inbound.endpoint.protocol.jms.BytesMessageDataSource;
-import org.wso2.carbon.inbound.endpoint.protocol.jms.BytesMessageInputStream;
-import org.wso2.carbon.inbound.endpoint.protocol.jms.JMSConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
-
-import javax.jms.BytesMessage;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.TextMessage;
 
 public abstract class GenericPollingConsumer {
 
@@ -135,5 +126,9 @@ public abstract class GenericPollingConsumer {
         axis2MsgCtx.setServerSide(true);
         axis2MsgCtx.setMessageID(UUIDGenerator.getUUID());
         return msgCtx;
+    }
+
+    public void destroy() {
+        log.info("Default destroy invoked. Not overwritten.");
     }
 }
