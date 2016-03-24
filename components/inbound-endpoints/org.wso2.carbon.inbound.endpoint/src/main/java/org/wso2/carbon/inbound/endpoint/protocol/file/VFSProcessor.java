@@ -17,17 +17,21 @@
  */
 package org.wso2.carbon.inbound.endpoint.protocol.file;
 
-import java.util.Properties;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundProcessorParams;
-import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundRequestProcessorImpl;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.StringTokenizer;
 
 public class VFSProcessor extends InboundRequestProcessorImpl implements TaskStartupObserver {
 
@@ -70,11 +74,79 @@ public class VFSProcessor extends InboundRequestProcessorImpl implements TaskSta
      * This will be called at the time of synapse artifact deployment.
      */
     public void init() {
+        if (isPinnedServerEnabled()) {
+            if (isPinnedServer()) {
+                startInboundFileListener();
+            } else {
+                log.info("Inbound file listener " + name +
+                        " not started as it is not pinned to this server");
+            }
+        } else {
+            startInboundFileListener();
+        }
+    }
+
+    public void startInboundFileListener() {
         log.info("Inbound file listener " + name + " starting ...");
         fileScanner = new FilePollingConsumer(vfsProperties, name, synapseEnvironment, interval);
         fileScanner.registerHandler(new FileInjectHandler(injectingSeq, onErrorSeq, sequential,
                 synapseEnvironment, vfsProperties));
         start();
+    }
+
+    private boolean isPinnedServerEnabled() {
+        if (vfsProperties.getProperty(PollingConstants.INBOUND_PINNED_SERVER) != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isPinnedServer() {
+        String thisServerName = System.getProperty("pinServerName", null);
+        if (thisServerName == null || "".equals(thisServerName)) {
+            thisServerName = getServerHost();
+            if (thisServerName == null || "".equals(thisServerName)) {
+                thisServerName = "localhost";
+            }
+        }
+
+        String pinnedServersValue = vfsProperties.getProperty(
+                PollingConstants.INBOUND_PINNED_SERVER, null);
+
+        List<String> pinnedServers = getPinnedServers(pinnedServersValue);
+        if (pinnedServers != null && !pinnedServers.isEmpty()) {
+            if (pinnedServers.contains(thisServerName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<String> getPinnedServers(String pinnedServersValue) {
+        StringTokenizer st = new StringTokenizer(pinnedServersValue, " ,");
+        List<String> pinnedServersList = new ArrayList<String>();
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            if (token.length() != 0) {
+                pinnedServersList.add(token);
+            }
+        }
+        return pinnedServersList;
+    }
+
+    private String getServerHost() {
+        try {
+            InetAddress addr = InetAddress.getLocalHost();
+            if (addr != null) {
+                return addr.getHostName();
+            }
+        } catch (UnknownHostException e) {
+            log.warn("Unable to get the hostName or IP address of the server", e);
+        }
+
+        return null;
     }
 
     /**
