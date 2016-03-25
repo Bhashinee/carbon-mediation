@@ -46,6 +46,7 @@ public class InboundRunner implements Runnable {
     private long currentRuntime;
     private long cycleInterval;
     private String tenantDomain;
+    private boolean runOnManagerOverride;
 
     private static final Log log = LogFactory.getLog(InboundRunner.class);
 
@@ -53,6 +54,8 @@ public class InboundRunner implements Runnable {
         this.task = task;
         this.interval = interval;
         this.tenantDomain = tenantDomain;
+        this.runOnManagerOverride = Boolean.parseBoolean(
+                System.getProperty("runOnManager", "false"));
     }
 
     /**
@@ -70,7 +73,7 @@ public class InboundRunner implements Runnable {
             log.debug("Waiting for the configuration context to be loaded to run Inbound Endpoint.");
             Boolean isSinglNode = ClusteringAgentUtil.isSingleNode();
             if (isSinglNode != null) {
-                if (!isSinglNode && !CarbonUtils.isWorkerNode()) {
+                if (!isSinglNode && !CarbonUtils.isWorkerNode() && !runOnManagerOverride) {
                     // Given node is the manager in the cluster, and not
                     // required to run the service
                     execute = false;
