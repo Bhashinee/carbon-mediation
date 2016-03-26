@@ -22,6 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 
+import java.util.Properties;
+
 /**
  * 
  * FileTask class is use to schedue tasks for inbound file processor when
@@ -51,5 +53,9 @@ public class FileTask extends InboundTask {
 
     public void destroy() {
         logger.debug("Destroying Task. ");
+    }
+
+    public Properties getInboundProperties() {
+        return fileScanner.getInboundProperties();
     }
 }

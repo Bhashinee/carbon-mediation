@@ -17,16 +17,18 @@
  */
 package org.wso2.carbon.inbound.endpoint.common;
 
-import java.util.Date;
-
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.inbound.endpoint.persistence.service.InboundEndpointPersistenceServiceDSComponent;
+import org.wso2.carbon.inbound.endpoint.protocol.file.FileTask;
 import org.wso2.carbon.mediation.clustering.ClusteringAgentUtil;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ConfigurationContextService;
+
+import java.util.Date;
+import java.util.Properties;
 
 /**
  * 
@@ -46,6 +48,7 @@ public class InboundRunner implements Runnable {
     private long currentRuntime;
     private long cycleInterval;
     private String tenantDomain;
+    private boolean runOnManagerOverride = false;
 
     private static final Log log = LogFactory.getLog(InboundRunner.class);
 
@@ -53,6 +56,18 @@ public class InboundRunner implements Runnable {
         this.task = task;
         this.interval = interval;
         this.tenantDomain = tenantDomain;
+
+        // This is to add pinnedServer support to file task. This is in place ONLY for
+        // FileTask for now and not provided in generic manner in order not to make API changes.
+        Properties inboundProperties = null;
+        if (task instanceof FileTask) {
+            FileTask ft = (FileTask) task;
+            inboundProperties = ft.getInboundProperties();
+            // We only need to check if pinned server is enabled and not if this server is pinned
+            // server as this is done in InboundRequestProcessorImpl before arriving at this point.
+            this.runOnManagerOverride = InboundRequestProcessorImpl
+                    .isPinnedServerEnabled(inboundProperties);
+        }
     }
 
     /**
@@ -70,7 +85,7 @@ public class InboundRunner implements Runnable {
             log.debug("Waiting for the configuration context to be loaded to run Inbound Endpoint.");
             Boolean isSinglNode = ClusteringAgentUtil.isSingleNode();
             if (isSinglNode != null) {
-                if (!isSinglNode && !CarbonUtils.isWorkerNode()) {
+                if (!isSinglNode && !CarbonUtils.isWorkerNode() && !runOnManagerOverride) {
                     // Given node is the manager in the cluster, and not
                     // required to run the service
                     execute = false;

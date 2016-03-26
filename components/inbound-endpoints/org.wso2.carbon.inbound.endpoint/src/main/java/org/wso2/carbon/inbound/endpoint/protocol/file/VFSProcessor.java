@@ -17,17 +17,16 @@
  */
 package org.wso2.carbon.inbound.endpoint.protocol.file;
 
-import java.util.Properties;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundProcessorParams;
-import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundRequestProcessorImpl;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
+
+import java.util.Properties;
 
 public class VFSProcessor extends InboundRequestProcessorImpl implements TaskStartupObserver {
 
