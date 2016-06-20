@@ -77,18 +77,18 @@ public class PublishEventMediator extends AbstractMediator {
 		// second "getEventSink() == null" check inside synchronized(this) block is used to ensure only one thread
 		// sets event sink.
 		if (getEventSink() == null) {
-			synchronized (this) {
-				if (getEventSink() == null) {
-					try {
-						setEventSink(loadEventSink());
-					} catch (SynapseException e) {
-						String errorMsg = "Cannot mediate message. Failed to load event sink '" + getEventSinkName() +
-						          "'. Error: " + e.getLocalizedMessage();
+            synchronized (this) {
+                if (getEventSink() == null) {
+                    try {
+                        setEventSink(loadEventSink());
+                    } catch (SynapseException e) {
+                        String errorMsg = "Cannot mediate message. Failed to load event sink '" + getEventSinkName() +
+                                          "'. Error: " + e.getLocalizedMessage();
                         handleException(errorMsg, e, messageContext);
-					}
-				}
-			}
-		}
+                    }
+                }
+            }
+        }
 
 		SynapseLog synLog = getLog(messageContext);
 
