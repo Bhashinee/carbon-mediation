@@ -77,18 +77,18 @@ public class PublishEventMediator extends AbstractMediator {
 		// second "getEventSink() == null" check inside synchronized(this) block is used to ensure only one thread
 		// sets event sink.
 		if (getEventSink() == null) {
-			synchronized (this) {
-				if (getEventSink() == null) {
-					try {
-						setEventSink(loadEventSink());
-					} catch (SynapseException e) {
-						log.error("Cannot mediate message. Failed to load event sink '" + getEventSinkName() +
-						          "'. Error: " + e.getLocalizedMessage());
-						return true;
-					}
-				}
-			}
-		}
+            synchronized (this) {
+                if (getEventSink() == null) {
+                    try {
+                        setEventSink(loadEventSink());
+                    } catch (SynapseException e) {
+                        String errorMsg = "Cannot mediate message. Failed to load event sink '" + getEventSinkName() +
+                                          "'. Error: " + e.getLocalizedMessage();
+                        handleException(errorMsg, e, messageContext);
+                    }
+                }
+            }
+        }
 
 		SynapseLog synLog = getLog(messageContext);
 
@@ -147,13 +147,13 @@ public class PublishEventMediator extends AbstractMediator {
 
 		} catch (AgentException e) {
 			String errorMsg = "Agent error occurred while sending the event: " + e.getLocalizedMessage();
-			log.error(errorMsg, e);
+			handleException(errorMsg, e, messageContext);
 		} catch (SynapseException e) {
 			String errorMsg = "Error occurred while constructing the event: " + e.getLocalizedMessage();
-			log.error(errorMsg, e);
+            handleException(errorMsg, e, messageContext);
 		} catch (Exception e) {
 			String errorMsg = "Error occurred while sending the event: " + e.getLocalizedMessage();
-			log.error(errorMsg, e);
+            handleException(errorMsg, e, messageContext);
 		}
 
 		if (synLog.isTraceOrDebugEnabled()) {
