@@ -102,7 +102,6 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
         if (log.isDebugEnabled()) {
             log.debug("Received Message: Topic:" + topic + "  Message: " + mqttMessage);
         }
-        log.info("Received Message: Topic: " + topic);
         MqttClientManager clientManager = MqttClientManager.getInstance();
         String inboundIdentifier = clientManager.buildIdentifier
                 (mqttAsyncClient.getClientId(), confac.getServerHost(), confac.getServerPort());
