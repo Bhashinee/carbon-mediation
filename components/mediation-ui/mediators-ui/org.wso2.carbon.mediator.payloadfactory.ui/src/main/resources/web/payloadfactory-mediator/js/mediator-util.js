@@ -25,6 +25,9 @@ function addArgument(name) {
     evalTD.appendChild(createEvalTypeCombo('payloadFactory.argEval' + newIndex, newIndex, name));
 
 
+    var deepCheckTD = document.createElement("td");
+    deepCheckTD.appendChild(createDeepCheckTypeCombo('payloadFactory.argDeepCheck' + newIndex, newIndex, name));
+
     var valueTD = document.createElement("td");
     valueTD.innerHTML = "<input type='text' name='payloadFactory.argValue" + newIndex + "' id='payloadFactory.argValue" + newIndex + "'" +
                         " class='esb-edit small_textbox' />";
@@ -40,6 +43,7 @@ function addArgument(name) {
     argRaw.appendChild(indexTD);
     argRaw.appendChild(typeTD);
     argRaw.appendChild(evalTD);
+    argRaw.appendChild(deepCheckTD);
     argRaw.appendChild(valueTD);
     argRaw.appendChild(nsTD);
     argRaw.appendChild(deleteTD);
@@ -211,6 +215,29 @@ function createEvalTypeCombo(id, i, name) {
     //if(argType != 'xml'){
         combo_box.style.display= "none";
    // }
+    return combo_box;
+}
+
+function createDeepCheckTypeCombo(id, i, name) {
+    var combo_box = document.createElement('select');
+    combo_box.name = id;
+    combo_box.setAttribute("id", id);
+
+    var choice = document.createElement('option');
+    choice.value = 'true';
+    choice.appendChild(document.createTextNode(payloadfactory_i18n["mediator.payloadFactory.true"]));
+    choice.selected=true;
+    combo_box.appendChild(choice);
+
+    choice = document.createElement('option');
+    choice.value = 'false';
+    choice.appendChild(document.createTextNode(payloadfactory_i18n["mediator.payloadFactory.false"])); //TODO: i18n
+    combo_box.appendChild(choice);
+
+    //var argType = document.getElementById('argType'+i).value;
+    //if(argType != 'xml'){
+//    combo_box.style.display= "none";
+    // }
     return combo_box;
 }
 
