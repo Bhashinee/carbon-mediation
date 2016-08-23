@@ -121,14 +121,14 @@ public class JMSPollingConsumer {
                 return null;
             }
             session = jmsConnectionFactory.getSession(connection);
-            destination = jmsConnectionFactory.getDestination(connection);
+            destination = jmsConnectionFactory.getDestination(session);
             if (replyDestinationName != null && !replyDestinationName.trim().equals("")) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Using the reply destnation as " + replyDestinationName +
                                  " in inbound endpoint.");
                 }
                 replyDestination =
-                                   jmsConnectionFactory.createDestination(connection,
+                                   jmsConnectionFactory.createDestination(session,
                                                                           replyDestinationName);
             }
             messageConsumer = jmsConnectionFactory.getMessageConsumer(session, destination);            
