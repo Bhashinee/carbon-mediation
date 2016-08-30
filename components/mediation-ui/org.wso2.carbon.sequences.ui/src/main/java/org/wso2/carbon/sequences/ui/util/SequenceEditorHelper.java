@@ -17,7 +17,9 @@
 package org.wso2.carbon.sequences.ui.util;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axis2.util.XMLUtils;
+import org.apache.xerces.impl.Constants;
+import org.apache.xerces.util.SecurityManager;
 import org.wso2.carbon.mediator.service.MediatorService;
 import org.wso2.carbon.mediator.service.MediatorStore;
 import org.wso2.carbon.mediator.service.builtin.CommentMediator;
@@ -29,17 +31,24 @@ import org.wso2.carbon.sequences.ui.client.EditorUIClient;
 import org.wso2.carbon.sequences.ui.factory.EditorUIClientFactory;
 import org.wso2.carbon.sequences.ui.factory.impl.SequenceEditorClientFactory;
 import org.wso2.carbon.sequences.ui.util.ns.NameSpacesRegistrar;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
+import javax.servlet.ServletConfig;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  *
@@ -50,11 +59,11 @@ public class SequenceEditorHelper {
 
     public static OMElement parseStringToElement(String xml) throws SequenceEditorException {
         OMElement elem;
+        ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes());
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes());
-            StAXOMBuilder builder = new StAXOMBuilder(bais);
-            elem = builder.getDocumentElement();
-        } catch (XMLStreamException e) {
+            elem = XMLUtils.toOM(getSecuredDocumentBuilder(true).parse(new ByteArrayInputStream((xml.getBytes())))
+                    .getDocumentElement());
+        } catch (Exception e) {
             throw new SequenceEditorException("Couldn't parse the sequence source as XML", e);
         }
         return elem;
@@ -521,6 +530,35 @@ public class SequenceEditorHelper {
         }
 
         return validity;
+    }
+
+    /**
+     * This method provides a secured document builder which will secure XXE attacks.
+     *
+     * @param setIgnoreComments whether to set setIgnoringComments in DocumentBuilderFactory.
+     * @return DocumentBuilder
+     * @throws javax.xml.parsers.ParserConfigurationException
+     */
+    private static DocumentBuilder getSecuredDocumentBuilder(boolean setIgnoreComments) throws
+            ParserConfigurationException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setIgnoringComments(setIgnoreComments);
+        documentBuilderFactory.setNamespaceAware(true);
+        documentBuilderFactory.setExpandEntityReferences(false);
+        documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        documentBuilderFactory.setXIncludeAware(false);
+        org.apache.xerces.util.SecurityManager securityManager = new SecurityManager();
+        securityManager.setEntityExpansionLimit(0);
+        documentBuilderFactory.setAttribute(Constants.XERCES_PROPERTY_PREFIX +
+                Constants.SECURITY_MANAGER_PROPERTY, securityManager);
+        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        documentBuilder.setEntityResolver(new EntityResolver() {
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                throw new SAXException("Possible XML External Entity (XXE) attack. Skip resolving entity");
+            }
+        });
+        return documentBuilder;
     }
 }
 
