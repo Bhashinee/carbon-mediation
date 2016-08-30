@@ -18,6 +18,8 @@ package org.wso2.carbon.sequences.ui.util;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.XMLUtils;
+import org.apache.xerces.impl.Constants;
+import org.apache.xerces.util.SecurityManager;
 import org.wso2.carbon.mediator.service.MediatorService;
 import org.wso2.carbon.mediator.service.MediatorStore;
 import org.wso2.carbon.mediator.service.builtin.CommentMediator;
@@ -33,6 +35,12 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -41,12 +49,6 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.rmi.RemoteException;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Set;
 
 /**
  *
@@ -59,7 +61,8 @@ public class SequenceEditorHelper {
         OMElement elem;
         ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes());
         try {
-            elem = XMLUtils.toOM(getSecuredDocumentBuilder(true).parse(new ByteArrayInputStream((xml.getBytes()))).getDocumentElement());
+            elem = XMLUtils.toOM(getSecuredDocumentBuilder(true).parse(new ByteArrayInputStream((xml.getBytes())))
+                    .getDocumentElement());
         } catch (Exception e) {
             throw new SequenceEditorException("Couldn't parse the sequence source as XML", e);
         }
@@ -536,13 +539,18 @@ public class SequenceEditorHelper {
      * @return DocumentBuilder
      * @throws javax.xml.parsers.ParserConfigurationException
      */
-    public static DocumentBuilder getSecuredDocumentBuilder(boolean setIgnoreComments) throws
+    private static DocumentBuilder getSecuredDocumentBuilder(boolean setIgnoreComments) throws
             ParserConfigurationException {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         documentBuilderFactory.setIgnoringComments(setIgnoreComments);
         documentBuilderFactory.setNamespaceAware(true);
         documentBuilderFactory.setExpandEntityReferences(false);
         documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        documentBuilderFactory.setXIncludeAware(false);
+        org.apache.xerces.util.SecurityManager securityManager = new SecurityManager();
+        securityManager.setEntityExpansionLimit(0);
+        documentBuilderFactory.setAttribute(Constants.XERCES_PROPERTY_PREFIX +
+                Constants.SECURITY_MANAGER_PROPERTY, securityManager);
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
         documentBuilder.setEntityResolver(new EntityResolver() {
             @Override
