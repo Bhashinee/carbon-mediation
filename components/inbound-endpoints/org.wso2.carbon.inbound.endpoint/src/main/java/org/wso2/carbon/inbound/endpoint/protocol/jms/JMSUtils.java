@@ -17,9 +17,7 @@
 */
 package org.wso2.carbon.inbound.endpoint.protocol.jms;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
@@ -72,6 +70,53 @@ public class JMSUtils {
             message.setString(elem.getLocalName(),elem.getText());
         }
     }
+
+    /**
+     * Extract transport level headers from JMS message into a Map
+     *
+     * @param message    JMS message
+     * @param msgContext axis2 message context
+     * @return a Map of the transport headers
+     */
+    public static Map<String, Object> getTransportHeaders(Message message, MessageContext msgContext) {
+        // create a Map to hold transport headers
+        Map<String, Object> map = new HashMap<>();
+
+        try {
+            Enumeration<?> propertyNamesEnm = message.getPropertyNames();
+
+            while (propertyNamesEnm.hasMoreElements()) {
+                String headerName = (String) propertyNamesEnm.nextElement();
+                Object headerValue = message.getObjectProperty(headerName);
+
+                if (headerValue instanceof String) {
+                    if (isHyphenReplaceMode(msgContext)) {
+                        map.put(inverseTransformHyphenatedString(headerName), message.getStringProperty(headerName));
+                    } else {
+                        map.put(headerName, message.getStringProperty(headerName));
+                    }
+                } else if (headerValue instanceof Integer) {
+                    map.put(headerName, message.getIntProperty(headerName));
+                } else if (headerValue instanceof Boolean) {
+                    map.put(headerName, message.getBooleanProperty(headerName));
+                } else if (headerValue instanceof Long) {
+                    map.put(headerName, message.getLongProperty(headerName));
+                } else if (headerValue instanceof Double) {
+                    map.put(headerName, message.getDoubleProperty(headerName));
+                } else if (headerValue instanceof Float) {
+                    map.put(headerName, message.getFloatProperty(headerName));
+                } else {
+                    map.put(headerName, headerValue);
+                }
+            }
+
+        } catch (JMSException e) {
+            log.error("Error while reading the Transport Headers from JMS Message", e);
+        }
+
+        return map;
+    }
+
 
     /**
      * Set transport headers from the axis message context, into the JMS message
@@ -301,5 +346,9 @@ public class JMSUtils {
             return true;
         }
         return false;
+    }
+
+    private static String inverseTransformHyphenatedString(String name) {
+        return name.replaceAll(JMSConstants.HYPHEN_REPLACEMENT_STR, "-");
     }
 }
