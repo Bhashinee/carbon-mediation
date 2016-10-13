@@ -17,7 +17,11 @@
 */
 package org.wso2.carbon.inbound.endpoint.protocol.jms;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
@@ -116,7 +120,6 @@ public class JMSUtils {
 
         return map;
     }
-
 
     /**
      * Set transport headers from the axis message context, into the JMS message
