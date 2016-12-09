@@ -17,6 +17,7 @@ package org.wso2.carbon.inbound.endpoint.protocol.mqtt;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -31,6 +32,10 @@ import org.wso2.carbon.inbound.endpoint.common.OneTimeTriggerAbstractCallback;
 
 /**
  * MQTT Asynchronous call back handler
+ * <p>
+ * This callback handler will be set to the client which maintains the connection to the MQTT broker.
+ * Methods in this class will be invoked when an event occurs from brokers' side.
+ * </p>
  */
 public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements MqttCallback {
 
@@ -47,6 +52,7 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
     private MqttConnectOptions connectOptions;
     private MqttConnectionConsumer connectionConsumer;
     private MqttConnectionListener connectionListener;
+    private long connectionTimeout;
 
     public MqttAsyncCallback(MqttAsyncClient mqttAsyncClient, MqttInjectHandler injectHandler,
                              MqttConnectionFactory confac, MqttConnectOptions connectOptions,
@@ -78,9 +84,12 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
         if (mqttAsyncClient != null) {
             try {
                 connectionListener = new MqttConnectionListener(connectionConsumer);
-                mqttAsyncClient.connect(connectOptions, connectionListener);
+                IMqttToken token = mqttAsyncClient.connect(connectOptions);
 
-                connectionConsumer.acquireTaskSuspension();
+                token.waitForCompletion(connectionTimeout);
+                if (!mqttAsyncClient.isConnected()) {
+                    connectionListener.onFailure();
+                }
 
                 if (mqttAsyncClient.isConnected()) {
                     int qosLevel = Integer.parseInt(mqttProperties
@@ -88,16 +97,24 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
                     if (confac.getTopic() != null) {
                         mqttAsyncClient.subscribe(confac.getTopic(), qosLevel);
                     }
-                    log.info("Re-Connected to the remote server.");
+                    log.info("MQTT inbound endpoint " + name + " re-connected to the broker");
                 }
             } catch (MqttException ex) {
                 log.error("Error while trying to subscribe to the remote.", ex);
-            } catch (InterruptedException ex) {
-                log.error("Error while trying to subscribe to the remote.", ex);
+                connectionListener.onFailure();
             }
+        } else {
+            log.error("MQTT inbound endpoint " + name + " re-connection failed");
         }
     }
 
+    /**
+     * Overridden method from MqttCallback interface. Which will invoked when a message receiving from MQTT broker
+     * @param topic name of the topic, message consumed from
+     * @param mqttMessage message itself
+     * @throws MqttException
+     */
+    @Override
     public void messageArrived(String topic, MqttMessage mqttMessage) throws MqttException {
         if (log.isDebugEnabled()) {
             log.debug("Received Message: Topic:" + topic + "  Message: " + mqttMessage);
@@ -127,8 +144,8 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
         }
     }
 
+    @Override
     public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
-        log.info("message delivered .. : " + iMqttDeliveryToken.toString());
     }
 
     public void setMqttConnectionConsumer(MqttConnectionConsumer connectionConsumer) {
@@ -168,5 +185,9 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
      */
     public String getName () {
         return this.name;
+    }
+
+    public void setConnectionTimeout(long connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
     }
 }

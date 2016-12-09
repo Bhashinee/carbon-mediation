@@ -36,6 +36,7 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
 
     private static final String ENDPOINT_POSTFIX = "MQTT" + COMMON_ENDPOINT_POSTFIX;
     private static final Log log = LogFactory.getLog(MqttListener.class);
+    private static final long DEFAULT_CONNECTION_TIMEOUT = 60000;
 
     private String injectingSeq;
     private String onErrorSeq;
@@ -53,6 +54,7 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
 
     protected String userName;
     protected String password;
+    private long connectionTimeout;
 
     protected boolean cleanSession;
 
@@ -110,6 +112,13 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
         if (mqttProperties.getProperty(MqttConstants.MQTT_SESSION_CLEAN) != null) {
             this.cleanSession =
                     Boolean.parseBoolean(mqttProperties.getProperty(MqttConstants.MQTT_SESSION_CLEAN));
+        }
+
+        if (mqttProperties.getProperty(MqttConstants.MQTT_CONNECTION_TIMEOUT) != null) {
+            this.connectionTimeout =
+                    Long.parseLong(mqttProperties.getProperty(MqttConstants.MQTT_CONNECTION_TIMEOUT));
+        } else {
+            this.connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
         }
     }
 
@@ -177,8 +186,9 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
             mqttAsyncCallback = new MqttAsyncCallback(mqttAsyncClient, injectHandler,
                     confac, connectOptions, mqttProperties);
             mqttAsyncCallback.setName(params.getName());
+            mqttAsyncCallback.setConnectionTimeout(connectionTimeout);
             connectionConsumer = new MqttConnectionConsumer(connectOptions, mqttAsyncClient,
-                    confac, mqttProperties);
+                    confac, mqttProperties, name, connectionTimeout);
             mqttAsyncCallback.setMqttConnectionConsumer(connectionConsumer);
             mqttAsyncClient.setCallback(mqttAsyncCallback);
             //here we register the callback handler

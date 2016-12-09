@@ -18,12 +18,12 @@ package org.wso2.carbon.inbound.endpoint.protocol.mqtt;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.util.Properties;
-import java.util.concurrent.Semaphore;
 
 /**
  * Connection consumer for MQTT listener which delegates connection attempts and subscription
@@ -35,15 +35,19 @@ public class MqttConnectionConsumer {
     private MqttConnectOptions connectOptions;
     private MqttConnectionFactory confac;
     private Properties mqttProperties;
-    private volatile Semaphore taskSuspensionSemaphore = new Semaphore(0);
     private MqttConnectionListener connectionListener;
+    private String name;
+    private long connectionTimeout;
 
     public MqttConnectionConsumer(MqttConnectOptions connectOptions, MqttAsyncClient mqttAsyncClient,
-                                  MqttConnectionFactory confac, Properties mqttProperties) {
+            MqttConnectionFactory confac, Properties mqttProperties, String name, long connectionTimeout) {
+        this.name = name;
         this.connectOptions = connectOptions;
         this.mqttAsyncClient = mqttAsyncClient;
         this.confac = confac;
         this.mqttProperties = mqttProperties;
+        this.connectionTimeout = connectionTimeout;
+
     }
 
     public void execute() {
@@ -57,9 +61,12 @@ public class MqttConnectionConsumer {
             } else {
                 try {
                     connectionListener = new MqttConnectionListener(this);
-                    mqttAsyncClient.connect(connectOptions, connectionListener);
+                    IMqttToken token = mqttAsyncClient.connect(connectOptions);
 
-                    this.acquireTaskSuspension();
+                    token.waitForCompletion(connectionTimeout);
+                    if (!mqttAsyncClient.isConnected()) {
+                        connectionListener.onFailure();
+                    }
 
                     if (mqttAsyncClient.isConnected()) {
                         int qosLevel = Integer.parseInt(mqttProperties
@@ -67,19 +74,17 @@ public class MqttConnectionConsumer {
                         if (confac.getTopic() != null) {
                             mqttAsyncClient.subscribe(confac.getTopic(), qosLevel);
                         }
-                        log.info("Connected to the remote server.");
+                        log.info("MQTT inbound endpoint " + this.name + " connected to the broker");
                     }
                 } catch (MqttException ex) {
                     log.error("Error while trying to subscribe to the remote ", ex);
-                } catch (InterruptedException ex) {
-                    log.error("Error while trying to subscribe to the remote ", ex);
+                    connectionListener.onFailure();
                 }
             }
         }
     }
 
     public void shutdown() {
-        taskSuspensionSemaphore.release();
         if (connectionListener != null) {
             this.connectionListener.shutdown();
         }
@@ -101,11 +106,12 @@ public class MqttConnectionConsumer {
         return mqttProperties;
     }
 
-    public void releaseTaskSuspension() {
-        taskSuspensionSemaphore.release();
+    public String getName() {
+        return this.name;
     }
 
-    public void acquireTaskSuspension() throws InterruptedException {
-        taskSuspensionSemaphore.acquire();
+    public long getConnectionTimeout()  {
+        return this.connectionTimeout;
     }
+
 }
