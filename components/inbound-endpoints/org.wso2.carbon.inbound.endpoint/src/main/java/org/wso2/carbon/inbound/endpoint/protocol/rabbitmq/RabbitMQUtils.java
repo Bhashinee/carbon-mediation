@@ -173,7 +173,7 @@ public class RabbitMQUtils {
         try {
             channel.close();
         } catch (TimeoutException e) {
-            log.error("Error occurred while closing connection." + e);
+            log.error("Error occurred while closing connection.", e);
         }
     }
 
