@@ -36,8 +36,8 @@ public class ProxyLogHandler extends AbstractSynapseHandler {
     public void handleLogAppenderSetter (MessageContext synCtx) {
         String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
 
-        if (proxyName != null) {
-            ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
+        ProxyService proxyService;
+        if (proxyName != null && (proxyService = synCtx.getConfiguration().getProxyService(proxyName)) != null ) {
             proxyService.setLogSetterValue();
         }
     }
