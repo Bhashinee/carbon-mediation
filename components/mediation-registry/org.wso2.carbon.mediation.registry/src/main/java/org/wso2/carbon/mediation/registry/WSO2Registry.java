@@ -728,4 +728,41 @@ public class WSO2Registry extends AbstractRegistry {
         }
     }
 
+    /**
+     * Creates a new non empty registry resource with the given content, or store the content as a property of a
+     * resource.
+     *
+     * @param key          the registry path of the resource
+     * @param isDirectory  if true, the resource is added as a collection
+     * @param mediaType    the media type of the resource
+     * @param content      the content to be stored as a property or the resource itself depending on the propertyName
+     * @param propertyName the name of the property to be set
+     */
+    public void newNonEmptyResource(String key, boolean isDirectory, String mediaType, String content,
+            String propertyName) {
+
+        setTenantInfo();
+
+        Registry registry = getRegistry(key);
+        String resolvedKey = resolvePath(key);
+        try {
+            Resource resource;
+            if (isDirectory) {
+                resource = registry.newCollection();
+            } else {
+                resource = registry.newResource();
+
+                if (null == propertyName || propertyName.isEmpty()) {
+                    resource.setMediaType(mediaType);
+                    resource.setContent(content);
+                } else {
+                    resource.setProperty(propertyName, content);
+                }
+            }
+            registry.put(resolvedKey, resource);
+        } catch (RegistryException e) {
+            handleException("Error while saving a resource at " + key, e);
+        }
+    }
+
 }
