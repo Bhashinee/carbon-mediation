@@ -21,6 +21,7 @@ import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.impl.llom.OMDocumentImpl;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -832,4 +833,9 @@ public class ESBRegistry extends AbstractRegistry {
 
     }
 
+    @Override
+    public void newNonEmptyResource(String path, boolean isDirectory, String contentType, String content,
+            String propertyName) {
+        throw new NotImplementedException();
+    }
 }
