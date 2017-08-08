@@ -19,43 +19,32 @@ package org.wso2.carbon.mediation.library.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.locks.Lock;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.EntryFactory;
 import org.apache.synapse.config.xml.SynapseImportFactory;
 import org.apache.synapse.config.xml.SynapseImportSerializer;
-import org.apache.synapse.config.xml.SynapseXMLConfigurationFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
-import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -69,9 +58,10 @@ import org.wso2.carbon.mediation.library.util.LocalEntryUtil;
 @SuppressWarnings({ "UnusedDeclaration" })
 public class MediationLibraryAdminService extends AbstractServiceBusAdmin {
 
-	private static Log log = LogFactory.getLog(MediationLibraryAdminService.class);
+    private static Log log = LogFactory.getLog(MediationLibraryAdminService.class);
 
-	public static final int MSGS_PER_PAGE = 10;
+    public static final int MSGS_PER_PAGE = 10;
+    public static final String SYNAPSE_CONFIGURATION = "SynapseConfiguration";
 
 	/**
 	 * Get an XML configuration element for a message processor from the FE and
@@ -96,6 +86,10 @@ public class MediationLibraryAdminService extends AbstractServiceBusAdmin {
 				Library synLib =
 				                 getSynapseConfiguration().getSynapseLibraries()
 				                                          .get(synImportQualfiedName);
+                // Need to attach synapse configuration to properties to identify synapse imports (Connectors)
+                // From Synapse level.
+                synLib.getArtifacts().put(SYNAPSE_CONFIGURATION, synapseConfiguration);
+
 				if (synLib != null) {
 					LibDeployerUtils.loadLibArtifacts(synapseImport, synLib);
 				}
@@ -441,18 +435,20 @@ public class MediationLibraryAdminService extends AbstractServiceBusAdmin {
 				if (ServiceBusConstants.ENABLED.equals(status)) {
 					synapseImport.setStatus(true);
 					synLib.setLibStatus(true);
+                    synLib.getArtifacts().put(SYNAPSE_CONFIGURATION, configuration);
 					synLib.loadLibrary();
 					deployingLocalEntries(synLib, configuration);
 				} else {
 					synapseImport.setStatus(false);
 					synLib.setLibStatus(false);
+                    synLib.getArtifacts().put(SYNAPSE_CONFIGURATION, configuration);
 					synLib.unLoadLibrary();
 					undeployingLocalEntries(synLib, configuration);
 				}
 
 				// update synapse configuration.
 				MediationPersistenceManager mp = getMediationPersistenceManager();
-				mp.saveItem(synapseImport.getName(), ServiceBusConstants.ITEM_TYPE_IMPORT);				
+				mp.saveItem(synapseImport.getName(), ServiceBusConstants.ITEM_TYPE_IMPORT);
 			}
 
 		} catch (Exception e) {

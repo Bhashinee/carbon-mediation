@@ -51,6 +51,7 @@ public class RestApiAdmin extends AbstractServiceBusAdmin{
 	
     private static Log log = LogFactory.getLog(RestApiAdmin.class);
     private static final String TENANT_DELIMITER = "/t/";
+    public static final String SYNAPSE_CONFIGURATION = "SynapseConfiguration";
 	
 	public boolean addApi(APIData apiData) throws APIException{
 		final Lock lock = getLock();
@@ -115,7 +116,11 @@ public class RestApiAdmin extends AbstractServiceBusAdmin{
             assertNameNotEmpty(apiName);
             
             API oldAPI = null;
-            API api = APIFactory.createAPI(RestApiAdminUtils.retrieveAPIOMElement(apiData));
+            // Need to attach synapse configuration to properties to identify synapse imports (Connectors)
+            // From Synapse level.
+            Properties properties = new Properties();
+            properties.put(SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+            API api = APIFactory.createAPI(RestApiAdminUtils.retrieveAPIOMElement(apiData), properties);
             SynapseConfiguration synapseConfiguration = getSynapseConfiguration();
             
             oldAPI = synapseConfiguration.getAPI(apiName);
@@ -160,7 +165,11 @@ public class RestApiAdmin extends AbstractServiceBusAdmin{
             }
             
             API oldAPI = null;
-            API api = APIFactory.createAPI(apiElement);
+            // Need to attach synapse configuration to properties to identify synapse imports (Connectors)
+            // From Synapse level.
+            Properties properties = new Properties();
+            properties.put(SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+            API api = APIFactory.createAPI(apiElement, properties);
             
             SynapseConfiguration synapseConfiguration = getSynapseConfiguration();
             
@@ -659,7 +668,9 @@ public class RestApiAdmin extends AbstractServiceBusAdmin{
 						apiName) != null) {
 					handleException(log, "A service named " + apiName + " already exists", null);
 				} else {
-					API api = APIFactory.createAPI(apiElement);
+                    Properties properties = new Properties();
+                    properties.put(SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+					API api = APIFactory.createAPI(apiElement, properties);
 
 					try {
 						getSynapseConfiguration().addAPI(api.getName(), api);

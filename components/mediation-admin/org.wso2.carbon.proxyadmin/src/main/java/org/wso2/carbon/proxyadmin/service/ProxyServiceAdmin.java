@@ -33,7 +33,6 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.util.PolicyInfo;
 import org.wso2.carbon.CarbonConstants;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.RegistryResources;
 import org.wso2.carbon.mediation.initializer.AbstractServiceBusAdmin;
 import org.wso2.carbon.mediation.initializer.ServiceBusConstants;
@@ -53,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -65,6 +65,7 @@ public class ProxyServiceAdmin extends AbstractServiceBusAdmin {
     private static String SUCCESSFUL = "successful";
     private static String FAILED = "failed";
     private static Log log = LogFactory.getLog(ProxyServiceAdmin.class);
+    public static final String SYNAPSE_CONFIGURATION = "SynapseConfiguration";
 
     /**
      * Enables statistics for the specified proxy service
@@ -235,8 +236,11 @@ public class ProxyServiceAdmin extends AbstractServiceBusAdmin {
                         proxyName) != null) {
                     handleException(log, "A service named " + proxyName + " already exists", null);
                 } else {
-                    ProxyService proxy = ProxyServiceFactory.createProxy(proxyServiceElement,
-                            getSynapseConfiguration().getProperties());
+                    // Need to attach synapse configuration to properties to identify synapse imports (Connectors)
+                    // From Synapse level.
+                    Properties properties = getSynapseConfiguration().getProperties();
+                    properties.put(SYNAPSE_CONFIGURATION, getSynapseConfiguration());
+                    ProxyService proxy = ProxyServiceFactory.createProxy(proxyServiceElement, properties);
 
                     if (updateMode) {
                         proxy.setFileName(fileName);
