@@ -108,7 +108,7 @@ if(tabs!=null && tabs.equals("0")) {
 
     function deleteApplication(libQName) {
         CARBON.showConfirmationDialog("<fmt:message key="confirm.delete.app"/>" , function(){
-            document.applicationsForm.action = "delete_artifact.jsp?artifactName=" + libQName+ "&type=library";
+            document.applicationsForm.action = "delete_artifact.jsp?artifactName=" + encodeURI(libQName) + "&type=library";
             document.applicationsForm.submit();
         });
     }
