@@ -180,7 +180,8 @@ var kafkaSpecialParameters = null;
                     <tr>
                         <td style="width:150px"><fmt:message key="inbound.isListening"/></td>
                         <td>
-                            <input type="radio" name="inbound.behavior" value="polling" onclick="toggleInboundInterval('polling')"><fmt:message key="inbound.polling"/>
+                            <input type="radio" id="inbound.behavior.polling" name="inbound.behavior" value="polling"
+                             onclick="toggleInboundInterval('polling')"><fmt:message key="inbound.polling"/>
                             <input type="radio" id="inbound.behavior.listening" name="inbound.behavior" value="listening" onclick="toggleInboundInterval('listening')" ><fmt:message key="inbound.listening"/>
                         </td>
                         <td></td>
@@ -189,7 +190,7 @@ var kafkaSpecialParameters = null;
                     <tr id="inboundIntervalRow">
                         <td style="width:150px"><fmt:message key="inbound.interval"/><span class="required">*</span></td>
                         <td align="left">
-                            <input name="inboundInterval" id="interval" class="longInput" type="text"/>
+                            <input name="interval" id="interval" class="longInput" type="text" value="<%=inboundDescription.getInterval()%>"/>
                         </td>
                         <td></td>
                     </tr>
@@ -360,6 +361,13 @@ var kafkaSpecialParameters = null;
                                         <script language="javascript">
                                             document.getElementById("inbound.behavior.listening").checked = true;
                                             document.getElementById("inboundIntervalRow").style.display="none";
+                                        </script>
+
+                                    <%
+                                } else if(inboundDescription.getParameters().get(strKey).equalsIgnoreCase("polling")){
+                                    %>
+                                        <script language="javascript">
+                                            document.getElementById("inbound.behavior.polling").checked = true;
                                         </script>
 
                                     <%

@@ -28,13 +28,15 @@ public class InboundDescription {
 	private String name;
 	private String type;
 	private String classImpl;
-   private long interval;
-   private boolean suspend;
-   private String injectingSeq;
-   private String onErrorSeq;
-   private Map<String, String> parameters;
-   private String fileName;
-   public static final String REGISTRY_KEY_PREFIX = "$registry:";
+	private String interval;
+	private boolean suspend;
+	private String injectingSeq;
+	private String onErrorSeq;
+	private Map<String, String> parameters;
+	private String fileName;
+	public static final String REGISTRY_KEY_PREFIX = "$registry:";
+	private static final String INTERVAL_PARAM = "interval";
+	private static final String CLASS_TYPE = "class";
 	private String artifactContainerName;
 	private boolean isEdited;
     
@@ -55,15 +57,24 @@ public class InboundDescription {
 		this.parameters = new HashMap<String, String>();
 		this.artifactContainerName = inboundEndpoint.getArtifactContainerName();
 		this.isEdited = inboundEndpoint.getIsEdited();
-		if(inboundEndpoint.getParameters() != null){
-			for(ParameterDTO parameterDTO :inboundEndpoint.getParameters()){
-				if(parameterDTO.getKey() != null){
+		this.interval = "";
+		if (inboundEndpoint.getParameters() != null) {
+			for (ParameterDTO parameterDTO : inboundEndpoint.getParameters()) {
+				if (parameterDTO.getKey() != null) {
 					this.parameters.put(parameterDTO.getName(), REGISTRY_KEY_PREFIX + parameterDTO.getKey());
-				}else	if(parameterDTO.getValue() != null){
-					this.parameters.put(parameterDTO.getName(), parameterDTO.getValue());
-				}else{
-					this.parameters.put(parameterDTO.getName(), "");
-				}			
+				} else {
+					if (parameterDTO.getValue() == null) {
+						this.parameters.put(parameterDTO.getName(), "");
+					} else {
+						if (getType().equals(CLASS_TYPE)) {
+							if (INTERVAL_PARAM.equals(parameterDTO.getName())) {
+								setInterval(("null".equals(parameterDTO.getValue())) ? "" : parameterDTO.getValue());
+								continue;
+							}
+						}
+						this.parameters.put(parameterDTO.getName(), parameterDTO.getValue());
+					}
+				}
 			}
 		}
 	}
@@ -96,11 +107,11 @@ public class InboundDescription {
 		this.classImpl = classImpl;
 	}
 
-	public long getInterval() {
+	public String getInterval() {
 		return interval;
 	}
 
-	public void setInterval(long interval) {
+	public void setInterval(String interval) {
 		this.interval = interval;
 	}
 
