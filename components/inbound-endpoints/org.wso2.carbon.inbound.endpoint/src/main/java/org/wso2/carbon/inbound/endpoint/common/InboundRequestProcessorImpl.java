@@ -26,12 +26,15 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundRequestProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
+import org.apache.synapse.task.TaskManager;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.inbound.endpoint.osgi.service.ServiceReferenceHolder;
 import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointsDataStore;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
 import org.wso2.carbon.inbound.endpoint.protocol.file.FileTask;
+import org.wso2.carbon.inbound.endpoint.protocol.jms.JMSTask;
+import org.wso2.carbon.mediation.ntask.NTaskTaskManager;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -92,6 +95,14 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
                 startUpController = new StartUpController();
                 startUpController.setTaskDescription(taskDescription);
                 startUpController.init(synapseEnvironment);
+                //register a listener to be notified when the local jms task is deleted
+                if (task instanceof JMSTask) {
+                    TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
+                    if (taskManagerImpl instanceof NTaskTaskManager) {
+                        ((NTaskTaskManager) taskManagerImpl)
+                                .registerListener((JMSTask) task, taskDescription.getName());
+                    }
+                }
             } catch (Exception e) {
                 log.error("Error starting the inbound endpoint " + name
                         + ". Unable to schedule the task. " + e.getLocalizedMessage(), e);
