@@ -19,9 +19,9 @@ package org.wso2.carbon.inbound.endpoint.protocol.jms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
+import org.wso2.carbon.ntask.core.impl.LocalTaskActionListener;
 
 /**
  * 
@@ -29,7 +29,7 @@ import org.wso2.carbon.inbound.endpoint.common.InboundTask;
  * is required
  * 
  */
-public class JMSTask extends InboundTask {
+public class JMSTask extends InboundTask implements LocalTaskActionListener {
     private static final Log logger = LogFactory.getLog(JMSTask.class.getName());
 
     private JMSPollingConsumer jmsPollingConsumer;
@@ -50,7 +50,20 @@ public class JMSTask extends InboundTask {
     }
 
     public void destroy() {
-        logger.debug("Destroying.");
+        logger.debug("Destroying JMS Task.");
+        jmsPollingConsumer.destroy();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Destroys the JMS task upon deletion of the local task.
+     *
+     * @param taskName the name of the task that was deleted
+     */
+    @Override
+    public void notifyLocalTaskDeletion(String taskName) {
+        destroy();
+        logger.debug("Destroyed JMS task due to deletion of task: " + taskName);
+    }
 }
