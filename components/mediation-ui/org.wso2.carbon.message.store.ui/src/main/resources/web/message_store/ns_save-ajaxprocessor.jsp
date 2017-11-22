@@ -15,13 +15,18 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  -->
-<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformationRepository" %>
-<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformation" %>
 <%@ page import="org.wso2.carbon.sequences.ui.util.SequenceEditorHelper" %>
+<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformation" %>
+<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformationRepository" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" %>
+
+<%!
+    private static final String SYNAPSE_NS = "http://ws.apache.org/ns/synapse";
+%>
 
 <%
     String currentID = request.getParameter("currentID");
+    String name = request.getParameter("name");
     if (currentID == null || "".equals(currentID)) {
         //TODO
         throw new RuntimeException("'currentID' parameter cannot be found");
@@ -34,11 +39,11 @@
         repository = new NameSpacesInformationRepository();
         session.setAttribute(NameSpacesInformationRepository.NAMESPACES_INFORMATION_REPOSITORY, repository);
     } else {
-        information = repository.getNameSpacesInformation(SequenceEditorHelper.getEditingMediatorPosition(session), currentID);
+        information = repository.getNameSpacesInformation(name, currentID);
     }
     if (information == null) {
         information = new NameSpacesInformation();
-        repository.addNameSpacesInformation(SequenceEditorHelper.getEditingMediatorPosition(session), currentID, information);
+        repository.addNameSpacesInformation(name, currentID, information);
     }
     information.removeAllNameSpaces();
     String CountParameter = request.getParameter("nsCount");
@@ -49,7 +54,11 @@
                 String prefix = request.getParameter("prefix" + i);
                 String uri = request.getParameter("uri" + i);
                 if (prefix != null && uri != null && !"".equals(uri)) {
-                    information.addNameSpace(prefix.trim(), uri.trim());
+                    uri = uri.trim();
+                    prefix = prefix.trim();
+                    if (!SYNAPSE_NS.equals(uri)) {
+                        information.addNameSpace(prefix, uri);
+                    }
                 }
             }
         } catch (NumberFormatException ignored) {

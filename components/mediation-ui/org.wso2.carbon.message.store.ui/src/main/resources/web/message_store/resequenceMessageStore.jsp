@@ -29,13 +29,16 @@
 <%@ page import="org.apache.synapse.util.xpath.SynapseXPath" %>
 <%@ page import="org.apache.synapse.util.xpath.SynapseJsonPath" %>
 <%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesRegistrar" %>
+<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformationRepository" %>
+<%@ page import="org.wso2.carbon.sequences.ui.util.ns.NameSpacesInformation" %>
+<%@ page import="java.util.Iterator" %>
+<%@ page import="org.apache.synapse.config.xml.SynapsePath" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib uri="http://wso2.org/projects/carbon/taglibs/carbontags.jar" prefix="carbon" %>
 <fmt:bundle basename="org.wso2.carbon.message.store.ui.i18n.Resources">
 <carbon:jsi18n resourceBundle="org.wso2.carbon.message.store.ui.i18n.JSResources"
                request="<%=request%>" i18nObjectName="messageStorei18n"/>
 <script src="../editarea/edit_area_full.js" type="text/javascript"></script>
-<script type="text/javascript" src="localentrycommons.js"></script>
 <script type="text/javascript" src="js/messageStore-util.js"></script>
 <script type="text/javascript" src="js/ns-editor.js"></script>
 <carbon:breadcrumb
@@ -43,6 +46,9 @@
         resourceBundle="org.wso2.carbon.message.store.ui.i18n.Resources"
         topPage="true"
         request="<%=request%>"/>
+<%!
+    private static final String SYNAPSE_NS = "http://ws.apache.org/ns/synapse";
+%>
 
 <%
     boolean isPool = true;
@@ -50,11 +56,12 @@
     boolean displayCommonProps = false;
     boolean displayExisistingDs = false;
 
-
-
     String origin = request.getParameter("origin");
 
+    NameSpacesRegistrar nameSpacesRegistrar = NameSpacesRegistrar.getInstance();
+
     String messageStoreName = request.getParameter("messageStoreName");
+    String id = "resequencer.argValue";
     String serverUrl = CarbonUIUtil.getServerURL(this.getServletConfig().getServletContext(),
             session);
     ConfigurationContext configContext =
@@ -110,7 +117,6 @@
     if (!isPool && !isInline) displayExisistingDs = true;
     if (isInline || isPool) displayCommonProps = true;
 
-    NameSpacesRegistrar nameSpacesRegistrar = NameSpacesRegistrar.getInstance();
 %>
 
 <script type="text/javascript">
@@ -198,12 +204,17 @@
             addServiceParameter("store.jdbc.username", document.getElementById('user').value);
             addServiceParameter("store.jdbc.password", document.getElementById('password').value);
         } else {
-            addServiceParameter("store.jdbc.dsName", document.getElementById('data_source').options[document.getElementById('data_source').selectedIndex].value);
+            addServiceParameter("store.jdbc.dsName", document.getElementById('data_source')
+                .options[document.getElementById('data_source').selectedIndex].value);
         }
-
+        addServiceParameter("store.resequence.polling.count", document.getElementById('polling.count').value);
+        addServiceParameter("store.resequence.id.path", document.getElementById('resequencer.argValue').value);
         addServiceParameter("store.jdbc.table", document.getElementById('store_table').value);
-        addServiceParameter("store.producer.guaranteed.delivery.enable", document.getElementById('enable_guaranteed_delivery').options[document.getElementById('enable_guaranteed_delivery').selectedIndex].value);
-        addServiceParameter("store.failover.message.store.name", document.getElementById('failover_message_store_name').options[document.getElementById('failover_message_store_name').selectedIndex].value);
+        addServiceParameter("store.producer.guaranteed.delivery.enable",
+            document.getElementById('enable_guaranteed_delivery')
+                .options[document.getElementById('enable_guaranteed_delivery').selectedIndex].value);
+        addServiceParameter("store.failover.message.store.name", document.getElementById('failover_message_store_name')
+            .options[document.getElementById('failover_message_store_name').selectedIndex].value);
 
     }
 
@@ -445,7 +456,7 @@
                                 <%
                                     boolean isXPath = false;
                                     boolean isJson = false;
-                                    SynapseXPath synapseXPath = null;
+                                    SynapsePath synapseXPath = null;
                                     SynapseJsonPath jsonPath = null;
                                     if (null != messageStore) {
                                         PathInfo pathInfo = messageStore.getPathInfo();
@@ -460,35 +471,49 @@
                                         }
 
                                         if (isXPath) {
-                                            nameSpacesRegistrar.registerNameSpaces(synapseXPath, "resequencer.argValue",session);
+
+                                            NameSpacesInformationRepository repository = (NameSpacesInformationRepository)
+                                                    session.getAttribute(NameSpacesInformationRepository
+                                                            .NAMESPACES_INFORMATION_REPOSITORY);
+                                            NameSpacesInformation information = null;
+                                            if (repository == null) {
+                                                repository = new NameSpacesInformationRepository();
+                                                session.setAttribute(NameSpacesInformationRepository
+                                                        .NAMESPACES_INFORMATION_REPOSITORY, repository);
+                                            } else {
+                                                information = repository.getNameSpacesInformation(messageStoreName,
+                                                        id);
+                                            }
+                                            if (information == null) {
+                                                information = new NameSpacesInformation();
+                                                repository.addNameSpacesInformation(messageStoreName,
+                                                        id, information);
+                                            }
+                                            for (Object prefix : synapseXPath.getNamespaces().keySet()) {
+                                                if (!SYNAPSE_NS.equals(information.getNameSpaceURI(prefix.toString()))) {
+                                                    information.addNameSpace(prefix.toString(),
+                                                            synapseXPath.getNamespaces().get(prefix).toString());
+                                                }
+                                            }
                                         }
                                     }
                                 %>
                                 <td>
-                                    <select class="esb-edit small_textbox" name="resequencer.argEval"
-                                            id="resequencer.argEval" style="Path display:none;"
-                                            onchange="onEvalTypeChange()">
-                                        <option value="xml"
-                                                <%=isXPath ? " selected=\"true\"" : "" %>>
-                                            <fmt:message key="store.path.xpath"/>
-                                        </option>
-                                        <option value="json"
-                                                <%=isJson ? " selected=\"true\"" : "" %>>
-                                            <fmt:message key="store.path.json"/>
-                                        </option>
-                                    </select>
+
+                                    <span style="float: left">
                                     <input id="resequencer.argValue"
                                            name="resequencer.argValue" type="text"
-                                           value="<%= isXPath ? synapseXPath.getExpression().toString() :
-                                           ( isJson ? jsonPath.getJsonPathExpression() : "N/A")%>" style="width:248px"/>
-                                </td>
-                                <td id="nsEditorButtonTD">
-                                    <% if (isXPath) { %>
-                                    <a href="#nsEditorLink" class="nseditor-icon-link"
-                                       style="padding-left:40px" onclick="showNameSpaceEditor('resequencer.argValue')">
-                                        <fmt:message key="resequencer.namespaces"/></a>
-                                    <% } %>
+                                           value="<%=((null!=messageStore)&&(messageStore.getParams()
+                                           .get("store.resequence.id.path")!=null))?messageStore.getParams()
+                                           .get("store.resequence.id.path"):""%>"
+                                           style="width:300px"/>
+                                        </span>
 
+                                    <a id="mediator.resequence.messagestore.xpath_nmsp_button" href="#"
+                                       onclick="showNameSpaceEditor('resequencer.argValue',
+                                       document.getElementById('Name').value)" class="nseditor-icon-link"
+                                       style="padding-left:40px; float: none">
+                                        <fmt:message key="resequencer.namespaces"/></a>
                                 </td>
                             </tr>
                             <tr>

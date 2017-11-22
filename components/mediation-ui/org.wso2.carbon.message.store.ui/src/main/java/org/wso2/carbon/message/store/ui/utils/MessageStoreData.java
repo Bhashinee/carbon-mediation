@@ -21,6 +21,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.synapse.config.xml.MessageStoreFactory;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -125,14 +126,21 @@ public class MessageStoreData {
             OMAttribute nameAtt = paramElem.getAttribute(MessageStoreFactory.NAME_Q);
             OMAttribute expressionAttribute = paramElem.getAttribute(MessageStoreFactory.EXPRESSION_Q);
             assert nameAtt != null;
-            if(expressionAttribute != null) {
-                String expressionValue = expressionAttribute.getAttributeValue();
-                SynapseXPath xPathExpression = getXPathExpression(paramElem, expressionValue);
-                this.pathInfo = new PathInfo();
-                this.pathInfo.setxPath(xPathExpression);
-            }
             String name = nameAtt.getAttributeValue();
-            String value = paramElem.getText();
+            String value;
+            if (expressionAttribute != null) {
+                value = expressionAttribute.getAttributeValue();
+                this.pathInfo = new PathInfo();
+                if (!value.startsWith("json")) {
+                    SynapseXPath xPathExpression = getXPathExpression(paramElem, value);
+                    this.pathInfo.setxPath(xPathExpression);
+                } else {
+                    SynapseJsonPath jsonPath = new SynapseJsonPath(value);
+                    this.pathInfo.setJsonPath(jsonPath);
+                }
+            } else {
+                value = paramElem.getText();
+            }
             params.put(name, value);
         }
 
