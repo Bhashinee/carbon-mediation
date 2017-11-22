@@ -6,6 +6,7 @@
     String configuration = request.getParameter("messageStoreString");
     String msName = request.getParameter("msName");
     String msProvider = request.getParameter("msProvider");
+    String parameterResequenceIdPath = "store.resequence.id.path";
     configuration = configuration.replaceAll("\\s\\s+|\\n|\\r", ""); // remove the pretty printing from the string
     configuration = configuration.replace("&", "&amp;"); // this is to ensure that url is properly encoded
     OMElement messageStoreElement = AXIOMUtil.stringToOM(configuration);
@@ -16,16 +17,16 @@
     for (String key : messageStore.getParams().keySet()) {
         String paramName = key;
         String paramValue = messageStore.getParams().get(key);
+        if (paramName.equals(parameterResequenceIdPath)) {
+        }
+
         if (paramValue != "") {
             stringBuffer.append("|" + paramName + "#" + paramValue);
         }
     }
 %>
 
-
     <input type="hidden" id="tableParams" name="tableParams" value="<%=stringBuffer.toString()%>"/>
     <input id="Name" name="Name" type="hidden"
            value="<%=msName%>"/>
     <input name="Provider" id="Provider" type="hidden" value="<%=msProvider%>"/>
-
-

@@ -1,7 +1,7 @@
 var DEFAULT_DIV_ID = 'nsEditor';
 
 //private method
-function show_ns_editor(dID, id, mode, linkID) {
+function show_ns_editor(dID, id, mode, linkID, name) {
 
     var sufix = "";
     if (linkID != undefined && linkID != null && linkID != "null" && linkID != "") {
@@ -13,7 +13,7 @@ function show_ns_editor(dID, id, mode, linkID) {
         sufix = "&editorMode=" + mode;
     }
 
-    var url = 'ns_editor-ajaxprocessor.jsp?currentID=' + id + '&divID=' + dID + sufix;
+    var url = 'ns_editor-ajaxprocessor.jsp?currentID=' + id + '&name=' + name +'&divID=' + dID + sufix;
 
     var loadingContent = "<div id='workArea' style='overflow-x:hidden;'><div id='popupContent'><div class='ajax-loading-message'> <img src='../resources/images/ajax-loader.gif' align='top'/> <span>" + messageStorei18n["ns.editor.waiting.text"] + "</span> </div></div></div>";
     CARBON.showPopupDialog(loadingContent, messageStorei18n["ns.editor.title"], 300, false, null, 550);
@@ -24,23 +24,25 @@ function show_ns_editor(dID, id, mode, linkID) {
                 CARBON.showWarningDialog(messageStorei18n["ns.editor.load.error"]);
             }
         });
-
-
     return false;
 }
 
 function showNameSpaceEditorOnDiv(dID, id) {
     return show_ns_editor(dID, id);
 }
-function showNameSpaceEditor(id) {
-    return show_ns_editor('nsEditor', id);
+
+function showNameSpaceEditor(id, name) {
+    return show_ns_editor('nsEditor', id, null, null, name);
 }
+
 function showNameSpaceEditorHideLink(id, linkID) {
     return show_ns_editor('nsEditor', id, null, linkID);
 }
+
 function showSingleNameSpaceEditorOnDiv(dID, id) {
     return show_ns_editor(dID, id, 'single');
 }
+
 function showSingleNameSpaceEditor(id) {
     return show_ns_editor('nsEditor', id, 'single');
 }
@@ -48,6 +50,7 @@ function showSingleNameSpaceEditor(id) {
 function showMultiNameSpaceEditorOnDiv(dID, id) {
     return show_ns_editor(dID, id);
 }
+
 function showMultiNameSpaceEditor(id) {
     return show_ns_editor('nsEditor', id);
 }
@@ -189,7 +192,7 @@ function isValidURI(uri) {
     return regexp.test(uri);
 }
 
-function saveNameSpace(divID, id, linkID,prefixemptymsg,uriemptymsg, isSingle) {
+function saveNameSpace(divID, id, linkID,prefixemptymsg,uriemptymsg, isSingle, name) {
     if (!isValidNameSpaces(prefixemptymsg, uriemptymsg, isSingle)) {
         return false;
     }
@@ -214,7 +217,7 @@ function saveNameSpace(divID, id, linkID,prefixemptymsg,uriemptymsg, isSingle) {
             }
         }
     }
-    var url = 'ns_save-ajaxprocessor.jsp?currentID=' + id + "&nsCount=" + count + referenceString;
+    var url = 'ns_save-ajaxprocessor.jsp?currentID=' + id + "&name=" + name +"&nsCount=" + count + referenceString;
     var stringData = "null";
     jQuery.post(url, stringData,
         function(data, status) {

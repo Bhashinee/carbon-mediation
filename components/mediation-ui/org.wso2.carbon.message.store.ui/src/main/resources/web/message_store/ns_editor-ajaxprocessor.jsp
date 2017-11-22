@@ -23,8 +23,13 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib uri="http://wso2.org/projects/carbon/taglibs/carbontags.jar" prefix="carbon" %>
 
+<%!
+    private static final String SYNAPSE_NS = "http://ws.apache.org/ns/synapse";
+%>
+
 <%
     String currentID = request.getParameter("currentID");
+    String name = request.getParameter("name");
     if (currentID == null || "".equals(currentID)) {
         //TODO
         throw new RuntimeException("'currentID' parameter cannot be found");
@@ -51,11 +56,11 @@
         repository = new NameSpacesInformationRepository();
         session.setAttribute(NameSpacesInformationRepository.NAMESPACES_INFORMATION_REPOSITORY, repository);
     } else {
-        information = repository.getNameSpacesInformation(SequenceEditorHelper.getEditingMediatorPosition(session), currentID);
+        information = repository.getNameSpacesInformation(name, currentID);
     }
     if (information == null) {
         information = new NameSpacesInformation();
-        repository.addNameSpacesInformation(SequenceEditorHelper.getEditingMediatorPosition(session), currentID, information);
+        repository.addNameSpacesInformation(name, currentID, information);
     }
 
     // Set standard HTTP/1.1 no-cache headers.
@@ -97,6 +102,7 @@
                                             while (prefixes.hasNext()) {
                                                 String prefix = prefixes.next();
                                                 String uri = information.getNameSpaceURI(prefix);
+                                                if (!SYNAPSE_NS.equals(uri)) {
                                                 if (prefix == null) {
                                                     prefix = "";
                                                 }
@@ -124,6 +130,7 @@
                                         if (isSingle) {
                                             break;
                                         }
+                                                }
                                     }
                                     } else if (isSingle) {
                                         i++; %>
@@ -150,7 +157,8 @@
                                href="#"
                                value="<fmt:message key="ns.add"/>"/>
                         <input id="saveNSButton" class="button" name="saveNSButton" type="button"
-                               onclick="javascript: saveNameSpace('<%=divID%>', '<%=currentID%>', '<%=linkID%>','<fmt:message key="ns.prefixemptyerror.save"/>','<fmt:message key="ns.uriemptyerror.save"/>', <%=isSingle ? "true" : "false"%>); return false;"
+                               onclick="javascript: saveNameSpace('<%=divID%>', '<%=currentID%>', '<%=linkID%>','<fmt:message key="ns.prefixemptyerror.save"/>','<fmt:message key="ns.uriemptyerror.save"/>', <%=isSingle ? "true" : "false"%>, '<%=name%>'); return false;"
+
                                href="#"
                                value="<fmt:message key="ns.save"/>"/>
                         <input id="cancelNSButton" class="button" name="cancelNSButton" type="button"

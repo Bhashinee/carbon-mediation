@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.message.store.ui.utils;
 
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
@@ -30,13 +31,13 @@ public class PathInfo {
     /**
      * If the specified path is based on xml this will be populated.
      */
-    private SynapseXPath xPath;
+    private SynapsePath xPath;
     /**
      * If the specified path is json this will be populated.
      */
     private SynapseJsonPath jsonPath;
 
-    public SynapseXPath getXPath() {
+    public SynapsePath getXPath() {
         return xPath;
     }
 
